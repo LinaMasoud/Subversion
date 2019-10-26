@@ -13,14 +13,14 @@ sudo yum install epel-release
 sudo yum install ansible
 ```
 3) Setup Ansible ServiceAccount & SSH Configuration:
-    On the Controller & SVN Server:
-    ```
-    sudo -i
-    mkdir /ansiblesvc
-    useradd ansiblesvc -md /ansiblesvc
-    chown -R ansiblesvc:ansiblesvc /ansiblesvc
-    usermod --shell /bin/bash ansiblesvc
-    ```
+  On the Controller & SVN Server:
+  ```
+  sudo -i
+  mkdir /ansiblesvc
+  useradd ansiblesvc -md /ansiblesvc
+  chown -R ansiblesvc:ansiblesvc /ansiblesvc
+  usermod --shell /bin/bash ansiblesvc
+  ```
   On the Controller:
   ```
   su - ansiblesvc
