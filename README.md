@@ -6,14 +6,15 @@ This is a playbook with a couple of roles and tasks to install and configure Apa
 These instructions will get you a copy of the project up and running on your local machine for development and testing or even production purposes.
 
 ### Prerequisites & Steps to Run the playbook
-1) 2 RedHat/CentOS7 machines (Ansible Controller - SVN Server)
-2) Install Ansible on the Controller using the following commands:
+2 RedHat/CentOS7 machines (Ansible Controller - SVN Server)
+Install Ansible on the Controller using the following commands:
 ```
 sudo yum install epel-release
 sudo yum install ansible
 ```
-3) Setup Ansible ServiceAccount & SSH Configuration:
-  On the Controller & SVN Server:
+Setup Ansible ServiceAccount & SSH Configuration:
+
+  *On the Controller & SVN Server:
   ```
   sudo -i
   mkdir /ansiblesvc
@@ -21,13 +22,13 @@ sudo yum install ansible
   chown -R ansiblesvc:ansiblesvc /ansiblesvc
   usermod --shell /bin/bash ansiblesvc
   ```
-  On the Controller:
+  *On the Controller:
   ```
   su - ansiblesvc
   ssh-keygen
   Copy the Public Key exist in .ssh/id_rsa.pub
   ```
-  On SVN Server:
+  *On SVN Server:
   ```
   su - ansiblesvc
   mkdir .ssh
@@ -36,16 +37,16 @@ sudo yum install ansible
   Paste the public key in authorized_keys
   chmod 644 authorized_keys
   ```
-4) From The controller Clone the Playbook & Change Directory to the files
-5) Run the playbook after updating hosts & group_var/all.yml files carefully using the following command:
+From The controller Clone the Playbook & Change Directory to the files
+Run the playbook after updating hosts & group_var/all.yml files carefully using the following command:
 ```
-  su - ansiblesvc 
-  ansible-playbook -i hosts svn.yml
+su - ansiblesvc 
+ansible-playbook -i hosts svn.yml
 ```
-6) Verify the provisioning
+Verify the provisioning
 ```
-  cd  /svn-repository
-  mkdir test
-  /usr/local/bin/make-svn-repository -r <testrepo> -s test -o "your name" -c "comment"
-  Check the repo from the browser
+cd  /svn-repository
+mkdir test
+/usr/local/bin/make-svn-repository -r <testrepo> -s test -o "your name" -c "comment"
+Check the repo from the browser
 ```
