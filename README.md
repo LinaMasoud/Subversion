@@ -2,8 +2,8 @@
 
 1) 2 RedHat/CentOS7 machines (Ansible Controller - SVN Server)
 2) Install Ansible on the Controller using the following commands:
-    sudo yum install epel-release
-    sudo yum install ansible
+#sudo yum install epel-release
+#sudo yum install ansible
 3) Setup Ansible ServiceAccount & SSH Configuration:
     On the Controller & SVN Server:
         sudo -i
