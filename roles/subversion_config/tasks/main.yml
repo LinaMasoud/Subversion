@@ -1,0 +1,6 @@
+---
+- name: Copy subversion.conf to remove Location directive
+  copy:
+    src: subversion.conf
+    dest: /etc/httpd/conf.d/subversion.conf
+    backup: yes

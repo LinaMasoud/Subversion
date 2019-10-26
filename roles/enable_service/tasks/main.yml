@@ -1,0 +1,12 @@
+- name: Reload System Daemon
+  command: systemctl daemon-reload   
+  
+- name: Starting httpd
+  service:
+    name: httpd
+    state: started
+
+- name: Enable httpd to Auto Start
+  service:
+    name: httpd
+    enabled: yes

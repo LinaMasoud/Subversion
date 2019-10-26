@@ -1,0 +1,8 @@
+---
+- name: Copy mgc-auth.include to setup ldap
+  template:
+    src: "mgc-auth.include.j2"
+    dest: "/etc/httpd/subversion.d/mgc-auth.include"
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    mode: 0644

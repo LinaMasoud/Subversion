@@ -1,0 +1,18 @@
+---
+# Playbook to install Subversion
+- hosts: svn
+  become: yes
+  roles:
+    - role: selinux 
+    - role: svn_binaries
+    - role: check_prerequisite
+    - role: service_account_local
+    - role: setup_needed_directories
+    - role: mount_shared_area
+    - role: ldap_setup
+    - role: make_svn_repository
+    - role: subversion_config
+    - role: httpd_config
+    - role: enable_service
+    - role: reboot
+    - role: verify_services

@@ -1,0 +1,375 @@
+#!/usr/bin/perl
+#
+#
+use POSIX;
+use strict;
+use Getopt::Long;
+
+#
+# Keeping perl happy...
+#
+$ENV{'PATH'}='';
+
+#
+#  Declare our subroutines -- keeps strict from complaining
+#
+sub process_arguments();
+sub print_help();
+sub print_usage();
+sub print_version();
+
+#
+# Options variables
+#
+use vars
+  qw($opt_r $opt_h $opt_w $opt_c $opt_V $opt_trac);
+
+#
+#
+# Define general variables
+#
+#
+
+my $PROGNAME = "make-svn-repository";
+my $version = "1.12wv";
+my $USAGE    = "Usage: $PROGNAME -r repository [-s subpath] [-g auth_group] -o owner -c comment [-t] [-h] [-V]";
+
+my $svn_administrator = "{{ service_account }}";                             # What account name admins the subversion subsystems
+my $repository_name = "";                                                    # The name of the requested repository
+my $repository_linkpath = "/svn/";                                           # Base URL path for repositories
+my $repository_path = "/svn-repository";                                     # Base directory for repositories
+my $repository_subpath = "";                                                 # Does this repository have a subdirectory under the main directory (e.g. /manufacturing)?
+my $repository_fullpath;                                                     # Will hold the contents of $repository_path and $repository_subpath if specified
+my $repository_confpath = "";                                                # Munged repository path for configuration file uniqueness
+my $repository_owner;                                                        # Owner of the repository -- goes in the http conf
+my $repository_comment;                                                      # Any comments needed in the http conf
+my $http_conf_path = "/etc/httpd/subversion.d";                              # Where the Apache subversion config files live
+my $trac_create;                                                             # Hook script to create trac project -- if any
+my $ad_group;                                                                # If empty then use "require valid-user" otherwise, this provides the "require group" argument.
+my $auth_include = "Include ". $http_conf_path . "/mgc-auth.include";        # Include for MGC authentication
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);  # Grab the current date and time for the config file comments
+my $activate_group = "AuthLDAPGroupAttributeIsDN on";                        # Indicates LDAP Group Attribute is used
+my $auth_entry;                                                              # Holds the extended security info (if any)
+my $svnadmin = "/usr/bin/svnadmin";                                          # Where is the svnadmin command?
+my $username = `/usr/bin/whoami`;
+chomp $username;
+
+#
+# Are we the Subversion administrator?   If not -- BARF!
+#
+if  ($username ne $svn_administrator) {
+   print "ERROR: You must execute this command as \"$svn_administrator\" and not as \"$username\".   Please login in or su to the proper account and try again.\n";
+   exit(1);
+}
+
+#
+# Grab and process command options
+#
+Getopt::Long::Configure('bundling');
+process_arguments();
+
+#
+#  cleanup repository name for validity
+#
+
+$repository_name =~ tr/a-zA-Z0-9_//cd;
+
+#
+#  Foot on this!   Force it to lowercase to boot...  :-)
+#
+
+$repository_name = lc($repository_name);
+
+#
+#  If repository has a subdirectory -- check that it exists here
+#
+
+if ($repository_subpath eq "(unspecified)") {
+   $repository_subpath = "";
+}
+
+if ($repository_subpath && ! -d $repository_path . "/" . $repository_subpath)
+{
+   print "Requested repository subpath $repository_subpath does not exist!\n";
+   exit(1);
+}
+
+#
+#  Build $repository_fullpath -- also munge $repository_subpath a little
+#
+
+if ($repository_subpath)
+{
+   $repository_fullpath = $repository_path . "/" . $repository_subpath;
+   $repository_subpath = $repository_subpath . "/" ;
+   $repository_confpath = $repository_subpath;
+   $repository_confpath =~ s/\//-/g;
+}
+else
+{
+   $repository_fullpath = $repository_path;
+}
+
+#
+# Build an apache config filename...
+#
+
+my $svnconf = "svn-" . $repository_confpath . $repository_name . ".conf";
+
+if (-f $http_conf_path . "/" . $svnconf)
+{
+  print "Repository: $http_conf_path/$svnconf already exists!\n";
+  exit(1);
+}
+
+#
+#  Call svn-admin create to build the repository
+#
+
+#
+#  Whoops!  This repository already exists!
+#
+
+if (-d $repository_fullpath . "/" . $repository_name)
+{
+  print "Repository: $repository_name already exists!\n";
+  exit(1);
+}
+
+#
+#  Do it!
+#
+
+my $SVNCREATE = "$svnadmin create $repository_fullpath/$repository_name";
+
+print "Building repository: $repository_name\n";
+
+open IN, "$SVNCREATE 2>&1 |" || die "Unable to execute svnadmin or command contained error\n";
+
+# Create returns nothing back -- the verify below is where we really check for success
+close IN;
+
+#
+#  Call svn-admin verify to check that the repository is "sane"
+
+my $SVNVERIFY = "$svnadmin verify $repository_fullpath/$repository_name";
+
+print "Verifying repository: $repository_name\n";
+
+open IN, "$SVNVERIFY 2>&1 |" || die "Unable to execute svnadmin or command contained error\n";
+
+while (<IN>) {
+    chomp($_);
+    my $verifyresult = $_;
+#    if ($verifyresult ne "* Verified revision 0." )
+#    {
+#       print "ERROR! Verify returned the following error: $verifyresult\n";
+#       exit(1);
+#    }
+}
+
+close IN;
+
+#
+#  Build http config file
+
+print "Building config for publication: $svnconf\n";
+
+# Do we need to use an Active Directory group membership for authentication?   If not, we'll take any valid user
+#
+if ($ad_group)
+{
+#   $auth_entry = "require group \"cn=$ad_group,ou=Security Groups,dc=mgc,dc=mentorg,dc=com\"";
+#   $auth_entry = $activate_group ."\n"."   require ldap-group \"cn=$ad_group,ou=NT4 Imports,ou=Security Groups,dc=mgc,dc=mentorg,dc=com\"";
+#   $auth_entry = $activate_group ."\n"."   require ldap-group cn=$ad_group,ou=NT4 Imports,ou=Security Groups,dc=mgc,dc=mentorg,dc=com";
+   $auth_entry = $activate_group ."\n"."   require ldap-group cn=$ad_group,ou=group,dc=mentorg,dc=com";
+}
+else
+{
+   $auth_entry = "require valid-user";
+}
+
+# The real file...
+#
+print "Configuration filename: $http_conf_path/$svnconf \n";
+open CONF, ">$http_conf_path/$svnconf";
+print CONF "# Repository: $repository_confpath$repository_name\n";
+print CONF "# Requested by: $repository_owner\n";
+printf CONF "# Created: %4d-%02d-%02d %02d:%02d:%02d\n",$year+1900,$mon+1,$mday,$hour,$min,$sec;
+printf CONF "# Last Changed: %4d-%02d-%02d %02d:%02d:%02d\n",$year+1900,$mon+1,$mday,$hour,$min,$sec;
+print CONF "# Comments:  $repository_comment\n";
+print CONF "<Location $repository_linkpath$repository_subpath$repository_name>\n";
+print CONF "   DAV svn\n";
+print CONF "   SVNPath $repository_fullpath/$repository_name\n";
+print CONF "   Options Indexes FollowSymLinks\n";
+print CONF "   order allow,deny\n";
+print CONF "   allow from all\n";
+print CONF "   AuthzSVNAccessFile $repository_fullpath/$repository_name/conf/authz\n";
+print CONF "   $auth_include\n";
+print CONF "   $auth_entry\n";
+print CONF "</Location>\n";
+close CONF;
+
+#  Build a skeletal authorization file
+#
+open SKEL, ">$repository_fullpath/$repository_name/conf/authz";
+print SKEL "### This file is an example authorization file for svnserve.\n";
+print SKEL "### Its format is identical to that of mod_authz_svn authorization\n";
+print SKEL "### files.\n";
+print SKEL "### As shown below each section defines authorizations for the path and\n";
+print SKEL "### (optional) repository specified by the section name.\n";
+print SKEL "### The authorizations follow. An authorization line can refer to a\n";
+print SKEL "### single user, to a group of users defined in a special [groups]\n";
+print SKEL "### section, or to anyone using the '*' wildcard.  Each definition can\n";
+print SKEL "### grant read ('r') access, read-write ('rw') access, or no access\n";
+print SKEL "### ('').\n";
+print SKEL "\n";
+print SKEL "[groups]\n";
+print SKEL "# harry_and_sally = harry,sally\n";
+print SKEL "\n";
+print SKEL "# [/foo/bar]\n";
+print SKEL "# harry = rw\n";
+print SKEL "# * =\n";
+print SKEL "\n";
+print SKEL "# [repository:/baz/fuz]\n";
+print SKEL "# \@harry_and_sally = rw\n";
+print SKEL "# * = r\n";
+print SKEL "\n";
+print SKEL "[/]\n";
+print SKEL "* = rw\n";
+print SKEL "al =\n";
+close SKEL;
+
+#
+##  Call /sbin/service httpd reload to grab the new config -- note that the subversion administrator account will either require a NOPASSWD entry for /sbin/service
+##  or you will have to supply the account password during each script run.  Since there are no interactive user accounts on the host I got the lazy route.  :-)
+
+#  Call '/etc/init.d/collabnet_subversion restart' to grab the new config
+#  Since there are no interactive user accounts on the host I got to use the lazy route.  :-)
+#!!!  OOPS   that doesn't work anymore  !!!#
+
+print "Publishing repository... \n";
+#system "/usr/bin/sudo /sbin/service httpd reload > /dev/null";
+#system "/usr/bin/sudo /etc/service collabnet_subversion restart > /dev/null";
+#print "Done.\n";
+print " You must run the following to complete the process:\n\n";
+print "    /usr/bin/sudo /sbin/service httpd restart \n ";
+print "\n Done.\n";
+
+#
+#  Call script to create trac project if requested
+
+### NOTHING HERE YET
+
+#
+#  We're done.
+#
+print "Command completed successfully.\n";
+exit(0);
+
+#
+# Subroutines
+sub process_arguments() {
+    GetOptions(
+        "h"              => \$opt_h,
+        "V"              => \$opt_V,
+        "r=s"            => \$repository_name,
+        "s=s"            => \$repository_subpath,
+        "g=s"            => \$ad_group,
+        "o=s"            => \$repository_owner,
+        "c=s"            => \$repository_comment,
+        "t"              => \$opt_trac
+    );
+
+   if ($opt_h) {
+        print_help();
+        exit(0);
+   }
+
+    if ($opt_V) {
+        print_version();
+        exit(0);
+    }
+
+   if ($opt_trac) {
+        print "Trac is not yet implemented\n";
+        exit(1);
+   }
+
+    unless ($repository_name) {
+        print_usage();
+        exit(1);
+    }
+
+    unless ($repository_owner) {
+        print_usage();
+        exit(1);
+    }
+
+    unless ($repository_comment) {
+        print_usage();
+        exit(1);
+    }
+
+}
+
+#### Print out a usage message
+
+sub print_usage () {
+    print "$USAGE\n";
+}
+
+#### Print out a version message
+
+sub print_version () {
+    print "$PROGNAME version: $version\n";
+}
+
+#### HELP ME!
+
+sub print_help () {
+    print "
+
+NAME
+
+       $PROGNAME - Create a subversion repository
+
+SYNOPSIS
+
+       $USAGE
+
+DESCRIPTION
+
+       This command will create and WebDAV publish a subversion repository.
+       Optionally it will also create, associate, and publish a Trac project.
+
+OPTIONS
+       -r         Repository name (required)
+       -s         Subpath for the repository (optional: directory path must
+                  already exist -- if not included, the repository will be
+                  created and published under the root \"\/\")
+       -g         Domain authentication group (optional: default is to
+                  authenticate against ANY valid domain user)
+       -o         Owner (required: firstname lastname <email>)
+       -c         Comment (required: information about the repository)
+       -t         Create an associated Trac project (optional: NOT YET
+                  IMPLEMENTED)
+       -V         Version information
+       -h         This page
+
+EXAMPLE
+
+\$ make-svn-repository -r testrepo -s manufacturing -g alm-manufacturing \\
+   -o \"Rex Smith <rex_smith\@mentor.com>\" \\
+   -c \"Test Repository for ESD Manufacturing\"
+
+AUTHOR/BLAME
+
+       Jonathan A. Davis <jonathan_davis\@mentor.com>
+
+AMMENDED BY (For WV use)
+       Richard England  <richard_england\@mentor.com>
+
+";
+
+}

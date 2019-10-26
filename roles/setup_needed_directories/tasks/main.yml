@@ -1,0 +1,38 @@
+- name: Create SVN Repos Directory, Change dir ownership, group and permissions
+  file:
+    path: /svn-repository
+    state: directory
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes
+
+- name: Create subversion.d dir
+  file:
+    path: /etc/httpd/subversion.d
+    state: directory
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes
+
+- name: Create trac.d dir(Optional -Deprecated)
+  file:
+    path: /etc/httpd/trac.d
+    state: directory
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes
+
+- name: Create subversion log dir
+  file:
+    path: /var/log/subversion
+    state: directory
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes
+
+- name: Change www dir ownership and group
+  file:
+    path: /var/www
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes

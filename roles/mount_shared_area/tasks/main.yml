@@ -1,0 +1,8 @@
+---
+- name: Mount repo dir to filer
+  mount:
+    path: /svn-repository
+    src:  "{{ shared_area }}"
+    opts: rw,bg,hard,intr,rsize=8192,wsize=8192
+    state: mounted
+    fstype: nfs

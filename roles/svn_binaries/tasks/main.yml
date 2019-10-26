@@ -1,0 +1,18 @@
+---
+- name: Remove old SVN Binaries
+  yum:
+    name: subversion
+    state: absent
+
+- name: Install wandisco yum repository (for subversion)
+  copy:
+    dest: /etc/yum.repos.d/WANDisco-svn1.9.repo
+    src: WANDisco-svn1.9.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install subversion v1.9
+  yum:
+    name: subversion
+    state: installed

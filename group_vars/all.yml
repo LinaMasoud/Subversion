@@ -1,0 +1,6 @@
+---
+service_account: 
+AuthLDAPBindDN: 
+AuthLDAPBindPassword: 
+AuthLDAPURL: 
+shared_area: 

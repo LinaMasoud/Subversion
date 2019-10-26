@@ -1,0 +1,7 @@
+- name: Check if httpd is running
+  systemd:
+    state: started
+    name: httpd
+  register:  httpd_status
+- debug:
+    msg: "Status is {{ httpd_status }}"

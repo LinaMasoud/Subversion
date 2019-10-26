@@ -1,0 +1,7 @@
+- name: Copy make-repo script
+  template:
+    src: make-svn-repository.j2
+    dest: /usr/local/bin/make-svn-repository   
+    owner: root
+    group: root
+    mode: 0755

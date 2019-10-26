@@ -1,0 +1,36 @@
+---
+# ftp
+- name: Install ftp latest if not installed
+  yum:
+    name: ftp
+    state: latest
+
+# wget
+- name: Install wget latest if not installed
+  yum:
+    name: wget
+    state: latest
+
+# httpd
+- name: Install httpd latest if not installed
+  yum:
+    name: httpd
+    state: latest
+
+# mod_ldap
+- name: Install mod_ldap latest if not installed
+  yum:
+    name: mod_ldap
+    state: latest
+
+# perl-CGI
+- name: Install perl-CGI latest if not installed
+  yum:
+    name: perl-CGI
+    state: latest
+
+# mod_dav_svn
+- name: Install mod_dav_svn latest if not installed
+  yum:
+    name: mod_dav_svn
+    state: latest

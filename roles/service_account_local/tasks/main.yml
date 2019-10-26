@@ -1,0 +1,13 @@
+#Create Service Account local or on Ldap
+- name: Add the serviceaccount user with a bash shell
+  user:
+    name: '{{ service_account }}'
+    shell: /bin/bash
+    home: /{{ service_account }}
+
+- name: Add serviceaccount user to sudoers
+  lineinfile:
+    dest: /etc/sudoers
+    line: '{{ service_account }}  ALL=(ALL)  NOPASSWD: ALL'
+    backup: yes
+    state: present
