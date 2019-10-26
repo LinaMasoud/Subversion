@@ -14,7 +14,7 @@ sudo yum install ansible
 ```
 Setup Ansible ServiceAccount & SSH Configuration:
 
-  *On the Controller & SVN Server:
+  * On the Controller & SVN Server:
   ```
   sudo -i
   mkdir /ansiblesvc
@@ -22,13 +22,13 @@ Setup Ansible ServiceAccount & SSH Configuration:
   chown -R ansiblesvc:ansiblesvc /ansiblesvc
   usermod --shell /bin/bash ansiblesvc
   ```
-  *On the Controller:
+  * On the Controller:
   ```
   su - ansiblesvc
   ssh-keygen
   Copy the Public Key exist in .ssh/id_rsa.pub
   ```
-  *On SVN Server:
+  * On SVN Server:
   ```
   su - ansiblesvc
   mkdir .ssh
