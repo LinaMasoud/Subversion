@@ -1,6 +1,6 @@
 ---
-service_account: 
-AuthLDAPBindDN: 
-AuthLDAPBindPassword: 
-AuthLDAPURL: 
-shared_area: 
+service_account: <local_serviceaccount_name>
+AuthLDAPBindDN: <ldap_serviceaccount_name>
+AuthLDAPBindPassword: <ldap_serviceaccount_password>
+AuthLDAPURL: <ldap_url>
+shared_area: <your_sharedarea_on_filer>
