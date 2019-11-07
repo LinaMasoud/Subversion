@@ -6,3 +6,11 @@
     opts: rw,bg,hard,intr,rsize=8192,wsize=8192
     state: mounted
     fstype: nfs
+
+- name: Maintain repository dir permission
+  file:
+    path: /svn-repository
+    state: directory
+    owner: '{{ service_account }}'
+    group: '{{ service_account }}'
+    recurse: yes
